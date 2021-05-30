@@ -10,7 +10,7 @@ tokenizer = T5Tokenizer.from_pretrained("google/mt5-small")
 raw_datasets = load_dataset("atomic")
 
 def tokenize_function(examples):
-    return tokenizer(examples["event"], padding="max_length", truncation=True, return_tensors="pt")
+    return tokenizer(examples["event"], padding=True, truncation=True)
 
 def tokenize_labels(examples):
     with tokenizer.as_target_tokenizer():
