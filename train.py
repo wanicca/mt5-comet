@@ -3,14 +3,14 @@ import sys
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 #from transformers import MT5Model, T5Tokenizer
-from transformers import TFMT5ForConditionalGeneration, T5Tokenizer
+from transformers import MT5ForConditionalGeneration, T5Tokenizer
 
 #tokenizer = AutoTokenizer.from_pretrained("google/mt5-base")
 tokenizer = T5Tokenizer.from_pretrained("google/mt5-small")
 raw_datasets = load_dataset("atomic")
 
 def tokenize_function(examples):
-    return tokenizer(examples["event"], padding=True, truncation=True)
+    return tokenizer(examples["event"], padding="max_length", truncation=True)
 
 def tokenize_labels(examples):
     with tokenizer.as_target_tokenizer():
@@ -28,7 +28,7 @@ from transformers import TrainingArguments
 
 training_args = TrainingArguments("test_trainer")
 #model = AutoModelForSeq2SeqLM.from_pretrained("google/mt5-base")
-model = TFMT5ForConditionalGeneration.from_pretrained("google/mt5-small")
+model = MT5ForConditionalGeneration.from_pretrained("google/mt5-small")
 from transformers import Trainer
 
 trainer = Trainer(
