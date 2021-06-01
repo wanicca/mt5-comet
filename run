@@ -8,7 +8,7 @@ python run_comet.py \
     --train_file data/atomic_train.json \
     --validation_file data/atomic_validation.json \
     --test_file data/atomic_test.json \
-    --output_dir /drive3/pouramini/models \
+    --output_dir output \
     --per_device_train_batch_size=2 \
     --per_device_eval_batch_size=4 \
     --predict_with_generate \
