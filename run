@@ -14,7 +14,8 @@ python run_comet.py \
     --predict_with_generate \
     --save_total_limit=4 \
     --save_steps=5000 \
-    --overwrite_output_dir
+    --max_steps=65000 \
+#    --overwrite_output_dir
 
 
 # Other options
