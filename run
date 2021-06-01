@@ -1,4 +1,4 @@
-python run_translation.py \
+python run_comet.py \
     --model_name_or_path t5-small \
     --do_train \
     --do_eval \
@@ -10,8 +10,9 @@ python run_translation.py \
     --output_dir /drive3/pouramini/models \
     --per_device_train_batch_size=2 \
     --per_device_eval_batch_size=4 \
-    --predict_with_generate
-    --save_total_limit=4
-    --save_steps=5000
-    --load_best_model_at_end=True
+    --predict_with_generate \
+    --save_total_limit=4 \
+    --save_steps=5000 \
+    --load_best_model_at_end=True \
+    --overwrite_output_dir
 
