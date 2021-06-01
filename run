@@ -14,6 +14,8 @@ python run_comet.py \
     --predict_with_generate \
     --save_total_limit=4 \
     --save_steps=5000 \
-    --load_best_model_at_end=True \
     --overwrite_output_dir
 
+
+# Other options
+#--load_best_model_at_end=True \
