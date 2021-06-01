@@ -1,3 +1,4 @@
+#Try to optimize the memory usage via model parallel. However, it is unuseful.
 #%% load libraries
 
 from datasets import load_dataset,load_metric
@@ -10,17 +11,15 @@ from torch.utils.tensorboard import SummaryWriter
 import os,time
 import argparse
 from tqdm.auto import tqdm
-#%% argparse
-parser = argparse.ArgumentParser()
-parser.add_argument('--local_rank', default=None, type=int,
-                    help='node rank for distributed training')
-args = parser.parse_args()
-local_rank = args.local_rank
+      
 #%% some hyper-parameters
 underlying_model_name = "google/mt5-small"
+device_map = {0: [0],
+             1: [1,2,3,4],
+             2: [5,6,7]}
 learning_rate = 6.25e-05
-iterations = 50000
-cycle = 500
+iterations = 100000
+cycle = 1000
 warm_up_steps = 0.002*iterations
 weight_decay = 0.01
 batch_size = 64
@@ -32,7 +31,6 @@ generation_params = {
     "max_length":50,
     "early_stopping":True
 }
-ddp = args.local_rank is not None
 device = 'cuda'
 log_dir = 'logs/'
 #%% load atomic data
@@ -49,13 +47,6 @@ atomic_relation_mappings = {
     "xWant":"<xWant>"
 }
 gen_token = "<gen>"
-#%% dpp initialize
-is_main_process = (not ddp or local_rank == 0) 
-if ddp:
-    torch.distributed.init_process_group(backend='nccl')
-    torch.cuda.set_device(local_rank)
-    print("launch process",local_rank)
-    world_size = torch.distributed.get_world_size()
 #%% Aggregate instances of queries and corresponding responses
 # (str)split_name -> (dict) query -> (list) response 
 print("building query responses")
@@ -112,34 +103,18 @@ def collate_fn_for_flattened(batch):
 #     new_batch = tokenizer(queries,return_tensors='pt',padding='longest')
 #     return new_batch,references
 #%% build dataloader
-#%% dataloader and  parallel
-node_batch_size = batch_size
-train_sampler = None
-if shuffle:
-    train_sampler = torch.utils.data.RandomSampler(atomic_flattened['train'])
-if ddp:
-    assert batch_size%world_size == 0
-    node_batch_size = batch_size//world_size
-    train_sampler = torch.utils.data.DistributedSampler(atomic_flattened['train'],shuffle=shuffle)
 train_dataloader = torch.utils.data.DataLoader(atomic_flattened['train'],
-    batch_size=node_batch_size,sampler=train_sampler,
-    collate_fn=collate_fn_for_flattened)
-if is_main_process:
-    dev_dataloader = torch.utils.data.DataLoader(atomic_flattened['validation'],
-        batch_size=node_batch_size,shuffle=shuffle_evaluation,
-        collate_fn=collate_fn_for_flattened)
-
+    batch_size=batch_size,shuffle=shuffle,collate_fn=collate_fn_for_flattened)
+dev_dataloader = torch.utils.data.DataLoader(atomic_flattened['validation'],
+    batch_size=batch_size,shuffle=shuffle,collate_fn=collate_fn_for_flattened)
 # %% prepare for training
 model_name = os.path.join("atomic-mt5",f"{learning_rate}_{cycle}_{iterations}_"
     f"{time.strftime('%Y%m%d %a %H:%M:%S')}")
-if is_main_process:
-    sw = SummaryWriter(os.path.join(log_dir,model_name))
-    serialization_dir = os.path.join(log_dir,model_name)
-    tokenizer.save_pretrained(serialization_dir)
-model = model.to(device=device)
-model_ = model #for generation
-if ddp:
-    model = torch.nn.parallel.DistributedDataParallel(model,device_ids=[local_rank])
+sw = SummaryWriter(os.path.join(log_dir,model_name))
+serialization_dir = os.path.join(log_dir,model_name)
+tokenizer.save_pretrained(serialization_dir)
+# model = model.to(device=device)
+model.parallelize(device_map)
 no_decay = ['bias', 'LayerNorm.weight']
 optimizer_grouped_parameters = [
     {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
@@ -152,10 +127,9 @@ best_dev_loss = 1e10
 
 #%%
 train_iter = iter(train_dataloader)
-if is_main_process:
-    pbar = tqdm(total=iterations,dynamic_ncols=True)
+pbar = tqdm(total=iterations,dynamic_ncols=True)
 while step <= iterations:
-    if is_main_process and (step % cycle == 0 and step > 0): #validation
+    if (step % cycle == 0 and step > 0): #validation
         with torch.no_grad():
             model.eval()
             pbar.set_description('validating...')
@@ -164,7 +138,7 @@ while step <= iterations:
             dev_token_count = 0
             dev_sample_loss = 0. #avg on sample
             dev_sample_count = 0
-            for batch in tqdm(dev_dataloader,desc=f'validating ...',leave=False):
+            for batch in tqdm(dev_dataloader,desc=f'validating...',leave=False):
                 if dev_sample_count>=validation_size:
                     break
                 batch = {k:v.to(device=device) for k,v in batch.items()}
@@ -188,19 +162,21 @@ while step <= iterations:
             sw.add_scalar('dev/macro_avg_loss',dev_macro_avg_loss,step)
             if dev_micro_avg_loss < best_dev_loss:
                 best_dev_loss = dev_micro_avg_loss
-                model_.save_pretrained(serialization_dir)
+                model.save_pretrained(serialization_dir)
             generation_results = \
             "|Queries|Generation Results|\n"\
             "|-|-|\n"
-            for i,key in enumerate(tqdm(atomic_query_responses['validation'])):
+            for i,key in enumerate(atomic_query_responses['validation']):
                 if i==validation_num_generation:
                     break
                 results = tokenizer.batch_decode(
-                    model_.generate(**tokenizer(key,return_tensors='pt').to(device=device),**generation_params),
+                    model.generate(**tokenizer(key,return_tensors='pt').to(device=device),**generation_params),
                     skip_special_tokens=True
                 )
                 generation_results+=f"|`{key}`|`{str(results)}`|\n"
             sw.add_text('dev/generation_samples',generation_results,step)
+    pbar.set_description('training...')
+    pbar.update()
     model.train()
     optimizer.zero_grad()
     try:
@@ -215,17 +191,8 @@ while step <= iterations:
     optimizer.step()
     scheduler.step()
     step+=1
-    if ddp:
-        loss = loss.detach()
-        losses = [torch.zeros_like(loss) for i in range(world_size)]
-        torch.distributed.all_gather(tensor_list=losses,tensor=loss)
-        loss = torch.stack(losses).mean()
-    if is_main_process:
-        pbar.set_description('training...')
-        pbar.update()
-        sw.add_scalar('train/loss',loss.item(),global_step=step)
+    sw.add_scalar('train/loss',loss.item(),global_step=step)
     del result
     del loss
-if is_main_process:
-    pbar.close()
+pbar.close()
 # %%
