@@ -19,18 +19,23 @@ local_rank = args.local_rank
 #%% some hyper-parameters
 underlying_model_name = "google/mt5-small"
 learning_rate = 6.25e-05
-iterations = 50000
-cycle = 500
+iterations = 100000
+cycle = 1000
 warm_up_steps = 0.002*iterations
 weight_decay = 0.01
 batch_size = 64
+#Cut down memory usage by accumulating tiny steps for multiple backwards;
+#Should be divided exactly by batch_size
+accumulation_tiny_steps = 4 
 shuffle = True
 shuffle_evaluation=False
 validation_size = 10000
 validation_num_generation = 10
 generation_params = {
     "max_length":50,
-    "early_stopping":True
+    "early_stopping":True,
+    "num_beams":5,
+    "num_return_sequences":5,
 }
 ddp = args.local_rank is not None
 device = 'cuda'
@@ -113,13 +118,13 @@ def collate_fn_for_flattened(batch):
 #     return new_batch,references
 #%% build dataloader
 #%% dataloader and  parallel
-node_batch_size = batch_size
+node_batch_size = batch_size//accumulation_tiny_steps
 train_sampler = None
 if shuffle:
     train_sampler = torch.utils.data.RandomSampler(atomic_flattened['train'])
 if ddp:
-    assert batch_size%world_size == 0
-    node_batch_size = batch_size//world_size
+    assert node_batch_size%world_size == 0
+    node_batch_size = node_batch_size//world_size
     train_sampler = torch.utils.data.DistributedSampler(atomic_flattened['train'],shuffle=shuffle)
 train_dataloader = torch.utils.data.DataLoader(atomic_flattened['train'],
     batch_size=node_batch_size,sampler=train_sampler,
@@ -203,27 +208,30 @@ while step <= iterations:
             sw.add_text('dev/generation_samples',generation_results,step)
     model.train()
     optimizer.zero_grad()
-    try:
-        batch = next(train_iter)
-    except StopIteration:
-        train_iter = iter(train_dataloader)
-        batch = next(train_iter)
-    batch = {k:v.to(device=device) for k,v in batch.items()}
-    result = model(**batch)
-    loss = result['loss']
-    loss.backward()
+    batch_loss = torch.tensor(0.)
+    for tiny_step in range(accumulation_tiny_steps):
+        try:
+            batch = next(train_iter)
+        except StopIteration:
+            train_iter = iter(train_dataloader)
+            batch = next(train_iter)
+        batch = {k:v.to(device=device) for k,v in batch.items()}
+        result = model(**batch)
+        loss = result['loss']/accumulation_tiny_steps
+        loss.backward()
+        batch_loss += loss.item()
     optimizer.step()
     scheduler.step()
     step+=1
     if ddp:
-        loss = loss.detach()
-        losses = [torch.zeros_like(loss) for i in range(world_size)]
-        torch.distributed.all_gather(tensor_list=losses,tensor=loss)
-        loss = torch.stack(losses).mean()
+        # loss = loss.detach()
+        losses = [torch.zeros_like(batch_loss) for i in range(world_size)]
+        torch.distributed.all_gather(tensor_list=losses,tensor=batch_loss)
+        batch_loss = torch.stack(losses).mean()
     if is_main_process:
         pbar.set_description('training...')
         pbar.update()
-        sw.add_scalar('train/loss',loss.item(),global_step=step)
+        sw.add_scalar('train/loss',batch_loss.item(),global_step=step)
     del result
     del loss
 if is_main_process:
