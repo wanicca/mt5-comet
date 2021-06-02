@@ -16,11 +16,11 @@ python run_translation.py \
     --max_train_samples=50000 \
     --do_eval \
     --max_eval_samples=500 \
+    --do_train \
 #    --do_predict \
 #    --max_predict_samples=100 \
 #    --max_source_length=220 \
 #    --max_target_length=250 \
-#    --do_train \
 #    --overwrite_output_dir
 
 
