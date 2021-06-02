@@ -1,0 +1,29 @@
+python run_translation.py \
+    --model_name_or_path t5-small \
+    --source_lang en \
+    --target_lang fa \
+    --source_prefix "Translate English to Persian: " \
+    --train_file /drive2/pouramini/data/ted_en_fa_train.json \
+    --validation_file /drive2/pouramini/data/ted_en_fa_test.json \
+    --test_file /drive2/pouramini/data/ted_en_fa_test.json \
+    --output_dir output_trans \
+    --per_device_train_batch_size=1 \
+    --per_device_eval_batch_size=4 \
+    --predict_with_generate \
+    --save_total_limit=4 \
+    --save_steps=5000 \
+    --max_steps=50000 \
+    --max_train_samples=50000 \
+    --do_eval \
+    --max_eval_samples=500 \
+#    --do_predict \
+#    --max_predict_samples=100 \
+#    --max_source_length=220 \
+#    --max_target_length=250 \
+#    --do_train \
+#    --overwrite_output_dir
+
+
+# Other options
+
+#--load_best_model_at_end=True \
