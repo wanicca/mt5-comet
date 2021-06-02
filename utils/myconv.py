@@ -4,6 +4,7 @@ import click
 import json
 import pandas as pd
 from tqdm import tqdm
+from sklearn.model_selection import train_test_split
 
 @click.command()
 @click.argument("fname", type=str)
@@ -11,7 +12,13 @@ from tqdm import tqdm
 @click.option(
     "--path", envvar="PWD", type=click.Path(),
 )
-def convert(fname, out, path):
+@click.option(
+    "--split",
+    default=0,
+    type=float,
+    help=""
+)
+def convert(fname, out, path, split):
     fname = path + "/" + fname
     if not out:
         ext = ".tsv" if fname.endswith("csv") else ".csv"
@@ -20,38 +27,47 @@ def convert(fname, out, path):
 
     out = path + "/" + Path(fname).stem + ext
     print("fname:", fname)
+    if fname.endswith("csv"):
+        df = pd.read_csv(fname)
+    else:
+        df = pd.read_table(fname)
+    if split > 0:
+        train_fname = path + "/" + Path(fname).stem + "_train.csv" 
+        test_fname = path + "/" + Path(fname).stem + "_test.csv" 
+        train, test = train_test_split(df, test_size=split)
+        train.to_csv(train_fname, index=False, encoding='utf-8') 
+        test.to_csv(test_fname, index=False, encoding='utf-8') 
+        print(train_fname)
+        print(test_fname)
+        return
+
     print("out:", out)
     if ext == ".tsv":
-        with open(fname, "r") as csvin:
-            with open(out, "w") as tsvout:
-                csvin = csv.reader(csvin)
-                tsvout = csv.writer(tsvout, delimiter="\t")
-                for row in csvin:
-                    tsvout.writerow(row)
+        with open(out, "w") as tsvout:
+            tsvout = csv.writer(tsvout, delimiter="\t")
+            for index, row in tqdm(df.iterrows(), total=len(df)):
+                tsvout.writerow(row)
     elif ext == ".csv":
-        # read tab-delimited file
-        with open(fname, "r") as fin:
-            cr = csv.reader(fin, delimiter="\t")
-            filecontents = [line for line in cr]
-
-        # write comma-delimited file (comma is the default delimiter)
         with open(out, "w") as fou:
             cw = csv.writer(fou, escapechar="\\")
-            cw.writerows(filecontents)
+            for index, row in tqdm(df.iterrows(), total=len(df)):
+                cw.writerow(filecontents)
     elif ext == ".json":
-        df = pd.read_csv(fname)
         dlist = []
         for index, row in tqdm(df.iterrows(), total=len(df)):
             d = {}
             item = {}
-            item["input"] = str(row["input_text"])
-            item["target"] = str(row["target_text"])
-            d["prefix"] = row["prefix"]
-            d["relation"] = item
+            item["en"] = str(row["en"])
+            item["fa"] = str(row["fa"])
+            if len(item["en"].strip()) < 10 or len(item["fa"].strip()) < 10:
+                #print("detected")
+                continue
+            #d["prefix"] = row["prefix"]
+            d["translation"] = item
             dlist.append(d)
         dd = {"data":dlist}
-        with open(out, 'w') as jsonfile:
-            json.dump(dd, jsonfile)
+        with open(out, 'w', encoding='utf8') as jsonfile:
+            json.dump(dd, jsonfile, ensure_ascii=False)
     else:
         print("Unsuported output format")
 
