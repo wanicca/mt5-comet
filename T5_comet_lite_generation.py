@@ -11,7 +11,7 @@ from tqdm.auto import tqdm
 
 #%%
 parser = argparse.ArgumentParser()
-parser.add_argument('--load_path', default=None, type=int,
+parser.add_argument('--load_path', default=None, type=str,
                     help='path to load saved model')
 args = parser.parse_args()
 load_path = args.load_path
