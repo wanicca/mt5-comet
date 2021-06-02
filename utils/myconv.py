@@ -28,9 +28,9 @@ def convert(fname, out, path, split):
     out = path + "/" + Path(fname).stem + ext
     print("fname:", fname)
     if fname.endswith("csv"):
-        df = pd.read_csv(fname, keep_default_na=False, encoding='utf8', quoting=csv.QUOTE_NONE, error_bad_lines=False)
+        df = pd.read_csv(fname, keep_default_na=False, encoding='utf8', quoting=csv.QUOTE_ALL, error_bad_lines=False)
     else:
-        df = pd.read_csv(fname, sep="\t", keep_default_na=False, encoding='utf8', quoting=csv.QUOTE_NONE, error_bad_lines=False)
+        df = pd.read_csv(fname, sep="\t", keep_default_na=False, encoding='utf8', quoting=csv.QUOTE_ALL, error_bad_lines=False)
     if split > 0:
         train_fname = path + "/" + Path(fname).stem + "_train.csv" 
         test_fname = path + "/" + Path(fname).stem + "_test.csv" 
@@ -57,12 +57,12 @@ def convert(fname, out, path, split):
         for index, row in tqdm(df.iterrows(), total=len(df)):
             d = {}
             item = {}
-            item["en"] = str(row["en"])
-            item["fa"] = str(row["fa"])
-            if len(item["en"].strip()) < 10 or len(item["fa"].strip()) < 10:
-                #print("detected")
+            en = str(row["en"]).replace('"','')
+            fa = str(row["fa"]).replace('"','')
+            if len(en.strip()) < 15 or len(fa.strip()) < 15:
                 continue
-            #d["prefix"] = row["prefix"]
+            item["en"] = en
+            item["fa"] = fa
             d["translation"] = item
             dlist.append(d)
         dd = {"data":dlist}
