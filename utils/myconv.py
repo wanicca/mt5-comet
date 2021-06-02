@@ -28,9 +28,9 @@ def convert(fname, out, path, split):
     out = path + "/" + Path(fname).stem + ext
     print("fname:", fname)
     if fname.endswith("csv"):
-        df = pd.read_csv(fname)
+        df = pd.read_csv(fname, keep_default_na=False, encoding='utf8', quoting=csv.QUOTE_NONE, error_bad_lines=False)
     else:
-        df = pd.read_table(fname)
+        df = pd.read_csv(fname, sep="\t", keep_default_na=False, encoding='utf8', quoting=csv.QUOTE_NONE, error_bad_lines=False)
     if split > 0:
         train_fname = path + "/" + Path(fname).stem + "_train.csv" 
         test_fname = path + "/" + Path(fname).stem + "_test.csv" 
