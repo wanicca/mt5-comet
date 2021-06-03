@@ -1,26 +1,27 @@
 python run_translation.py \
-    --model_name_or_path t5-small \
+    --model_name_or_path google/mt5-small \
     --source_lang en \
     --target_lang fa \
     --source_prefix "Translate English to Persian: " \
-    --train_file /drive2/pouramini/data/ted_en_fa_train.json \
-    --validation_file /drive2/pouramini/data/ted_en_fa_test.json \
-    --test_file /drive2/pouramini/data/ted_en_fa_test.json \
-    --output_dir output_trans \
+    --train_file data/ted_en_fa_train.json \
+    --validation_file data/ted/ted_en_fa_test.json \
+    --test_file data/ted/ted_en_fa_test.json \
+    --output_dir output_trans_mt5 \
     --per_device_train_batch_size=1 \
-    --per_device_eval_batch_size=4 \
+    --per_device_eval_batch_size=8 \
     --predict_with_generate \
     --save_total_limit=4 \
     --save_steps=5000 \
     --max_steps=50000 \
     --max_train_samples=50000 \
     --do_eval \
-    --max_eval_samples=500 \
+    --max_eval_samples=100 \
+    --max_source_length=520 \
+    --max_target_length=550 \
+    --val_max_target_length=550 \
+    --do_predict \
+    --max_predict_samples=100 \
     --do_train \
-#    --do_predict \
-#    --max_predict_samples=100 \
-#    --max_source_length=220 \
-#    --max_target_length=250 \
 #    --overwrite_output_dir
 
 
