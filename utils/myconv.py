@@ -18,7 +18,14 @@ from sklearn.model_selection import train_test_split
     type=float,
     help=""
 )
-def convert(fname, out, path, split):
+@click.option(
+    "--truncate",
+    default=-1,
+    type=int,
+    help=""
+)
+
+def convert(fname, out, path, split, truncate):
     fname = path + "/" + fname
     if not out:
         ext = ".tsv" if fname.endswith("csv") else ".csv"
@@ -40,6 +47,10 @@ def convert(fname, out, path, split):
         print(train_fname)
         print(test_fname)
         return
+
+    if truncate > 0:
+        df = df.truncate(after = truncate)
+        out = path + "/" + Path(fname).stem + "_" + str(truncate) + ext
 
     print("out:", out)
     if ext == ".tsv":
