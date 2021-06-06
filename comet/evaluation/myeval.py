@@ -135,12 +135,13 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
     envvar="PWD",
     #    multiple=True,
     type=click.Path(),
+    help="The current path (it is set by system)"
 )
 @click.option(
     "--out",
     default="",
     type=str,
-    help="The name of results"
+    help="The name for result csv file"
 )
 @click.option(
     "--data_type",
@@ -150,15 +151,15 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
 )
 @click.option(
     "--cbs",
-    default=False,
-    type=bool,
+    "-b",
+    is_flag=True,
     help="Calculate Bert Score"
 )
 @click.option(
     "--ignore_inputs",
-    default=False,
-    type=bool,
-    help="If there is no input file, set it to True"
+    "-i",
+    is_flag=True,
+    help="If there is no input file"
 )
 @click.option(
     "--task",
@@ -203,12 +204,14 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
         # split file path into folders
         P = list(reversed(fname.split("/")))
         p1 = P[1]
-        p2 = P[2]
-        p3 = P[3]
+        p2 = P[2] if len(P) > 1 else ""
+        p3 = P[3] if len(P) > 2 else ""
         res_exist = False
         out = out if out else p2 + "_" + p1
+        if not out.endswith(".csv"):
+           out += ".csv"
         if not "/" in out:
-            out_fname = f"{path}/{out}.csv"
+            out_fname = f"{path}/{out}"
         else:
             home = expanduser("~")
             out = out.replace("~/", home + "/")

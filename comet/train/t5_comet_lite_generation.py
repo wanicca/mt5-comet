@@ -77,16 +77,16 @@ for i,(query,responses) in enumerate(tqdm(atomic_query_responses['test'].items()
     hyps = model.generate(**inputs,**generation_params)
     hyps = tokenizer.batch_decode(hyps,skip_special_tokens=True)
     results.append({
-        "query":query,
-        "hyps":hyps,
-        "refs":responses
+        "head":query,
+        "gens":hyps,
+        "tails":responses
     })
 #%%
 with open(os.path.join(load_path,"generations.json"),'w') as f:
     json.dump(results,f,ensure_ascii=False,indent=2)
 # %%
-refs = {r['query']:r['refs'] for r in results}
-hyps = {r['query']:r['hyps'] for r in results}
+refs = {r['head']:r['tails'] for r in results}
+hyps = {r['head']:r['gens'] for r in results}
 from evaluation.eval import QGEvalCap
 QGEval = QGEvalCap("",refs,hyps,os.path.join(load_path,"eval_result.jsonl"))
 score_dict, scores_dict = QGEval.evaluate()
