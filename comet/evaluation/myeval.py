@@ -8,7 +8,7 @@ import re
 from os.path import expanduser
 import numpy as np
 from nltk.translate.bleu_score import sentence_bleu
-from comet.utils.rwfiles import *
+from comet.utils.myfiles import *
 from comet.evaluation.eval import QGEvalCap
 from tabulate import tabulate
 from pathlib import Path
