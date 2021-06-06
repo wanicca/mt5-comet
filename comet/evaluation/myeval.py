@@ -4,7 +4,6 @@ import csv
 import glob
 import click
 import pandas as pd
-import pickle
 import re
 import argparse
 import numpy as np
@@ -169,9 +168,9 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
 )
 @click.option(
     "--recalc",
-    default=True,
-    type=bool,
-    help="If set to false it uses and shows stored results"
+    default="",
+    type=str,
+    help="If set to 'clear', it clears last results and recalculate them, if set to 'append' it appends to the file specified with out option"
 )
 @click.option(
     "--keys",
@@ -182,7 +181,7 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
 def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False, 
         ignore_inputs=False,
         task="",
-        recalc=True,
+        recalc="",
         keys=""):
 
     pred_inps = glob.glob(f"{path}/*{input_files_pattern}*")
@@ -191,7 +190,19 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
         print(pred_file)
         fname = path + "/" + pred_file
         ext = Path(fname).suffix
-        if ext == ".pickle": continue
+        # split file path into folders
+        P = list(reversed(fname.split("/")))
+        p1 = P[1]
+        p2 = P[2]
+        p3 = P[3]
+        res_exist = False
+        csv_name = out if out else p2 + "_" + p1
+        out_fname = f"{path}/{csv_name}.csv"
+
+        if Path(out_fname).is_file() and not recalc:
+            print(f"{Path(out_fname).name} already exists! set recalc option to 'clear' or 'append' to reevaluate")
+
+            return
         if ".json" in ext:
             ckp = re.findall(r"\d+", fname)[-1] #checkpoint_step
             pre = pred_file.split(ckp)[0]
@@ -280,63 +291,44 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
         mydate = datetime.datetime.today()
         today = mydate.strftime("%Y-%m-%d")
 
-        ig = "_ignore_inputs" if ignore_inputs else ""
-        pickle_fname = f"{path}/{pred_file}" + ig + "_res.pickle"
+        M = {}
+        M["Task"] = task
+        M["P0"] = P[0] 
+        if not scores:
+            print("No score")
+        for key, val in scores.items():
+            try:
+                val = float(val)
+                val = round(val, 3)
+            except ValueError:
+                pass
+            M[key] = val
 
-        P = list(reversed(fname.split("/")))
-        p1 = P[1]
-        p2 = P[2]
-        p3 = P[3]
-        res_exist = False
-        if Path(pickle_fname).is_file() and not recalc:
-            print("============= Results already exists!")
-            with open(pickle_fname, "rb") as handle:
-                M = pickle.load(handle)
-            res_exist = True
-        else:
-            M = {}
-            M["Task"] = task
-            M["P0"] = P[0] 
-            if not scores:
-                print("No score")
-            for key, val in scores.items():
-                try:
-                    val = float(val)
-                    val = round(val, 3)
-                except ValueError:
-                    pass
-                M[key] = val
-
-            for i, st in enumerate(task.split("_")):
-                if st:
-                    M["T" + str(i)] = st
-            M["Date"] = today
-            M["Checkpoint"] = ckp
-            for i, p in enumerate(P[:-3]):
-                M["P" + str(i)] = p
-            with open(pickle_fname, "wb") as handle:
-                pickle.dump(M, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        csv_name = out if out else p2 + "_" + p1
-        all_fname = f"{path}/{csv_name}.csv"
+        for i, st in enumerate(task.split("_")):
+            if st:
+                M["T" + str(i)] = st
+        M["Date"] = today
+        M["Checkpoint"] = ckp
+        for i, p in enumerate(P[:-3]):
+            M["P" + str(i)] = p
         print("==============  CSV output =================+++++++++++++++")
-        print(all_fname)
+        print(out_fname)
         print("===============================+++++++++++++++")
-        Path(all_fname).parent.mkdir(parents=True, exist_ok=True)
-        if not res_exist or recalc or not Path(all_fname).is_file():
-            if not Path(all_fname).is_file():
-                with open(all_fname, "w") as f:  # You will need 'wb' mode in Python 2.x
-                    w = csv.DictWriter(f, M.keys())
-                    w.writeheader()
-                    w.writerow(M)
-            else:
-                with open(all_fname, "a") as f:  # You will need 'wb' mode in Python 2.x
-                    w = csv.DictWriter(f, fieldnames=M.keys())
-                    w.writerow(M)
-                csv_df = pd.read_csv(all_fname,  error_bad_lines=False)
-                final_df = csv_df.sort_values(by=['Exact_match_not_none'], ascending=False)
-                #group = final_df.groupby("P0", as_index = False)
-                #final_df = group.first() #.reset_index()
-                final_df.to_csv(all_fname, index=False)
+        Path(out_fname).parent.mkdir(parents=True, exist_ok=True)
+        if recalc == "clear":
+            with open(out_fname, "w") as f:  # You will need 'wb' mode in Python 2.x
+                w = csv.DictWriter(f, M.keys())
+                w.writeheader()
+                w.writerow(M)
+        else:
+            with open(out_fname, "a") as f:  # You will need 'wb' mode in Python 2.x
+                w = csv.DictWriter(f, fieldnames=M.keys())
+                w.writerow(M)
+            csv_df = pd.read_csv(out_fname,  error_bad_lines=False)
+            final_df = csv_df.sort_values(by=['Exact_match_not_none'], ascending=False)
+            #group = final_df.groupby("P0", as_index = False)
+            #final_df = group.first() #.reset_index()
+            final_df.to_csv(out_fname, index=False)
 
         #eval_file(path, pred_file, out, data_type, topk, cbs)
 
