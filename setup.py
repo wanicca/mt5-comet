@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
-
+# version 
 setup(
-    name='MyPackageName',
+    name='comet',
     version='1.0.0',
     url='https://github.com/mypackage.git',
     author='Author Name',
