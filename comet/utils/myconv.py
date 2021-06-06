@@ -5,6 +5,7 @@ import json
 import pandas as pd
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
+import comet.utils.myutils as mu
 
 @click.command()
 @click.argument("fname", type=str)
@@ -60,7 +61,7 @@ def convert(fname, out, path, split, truncate, newcol, rename):
         print(test_fname)
         return
     if rename:
-        res = dict(map(str.strip, sub.split(':', 1)) for sub in rename.split(',') if ':' in sub)
+        res = mu.arg2dict(rename)
         df = df.rename(columns=res)
         if not newcol:
            df.to_csv(fname, index=False, encoding='utf-8') 
