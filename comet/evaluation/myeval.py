@@ -120,8 +120,8 @@ def topk_eval(out, data, data_type, k, cbs=False):
     print("Exact Match:", np.mean(get2(topk_exact_match)))
     print("Exact Match Not None", np.mean(get2(topk_exact_match_not_none)))
     print("Mean sent BLEU score", np.mean(get2(topk_bleu_score)))
-    #QGEval = QGEvalCap(out, topk_gts, topk_res, calc_bert_score=cbs)
-    #scores,_ = QGEval.evaluate()
+    QGEval = QGEvalCap(out, topk_gts, topk_res, calc_bert_score=cbs)
+    scores,_ = QGEval.evaluate()
     scores = {}
     scores["Exact_match"] = np.mean(get2(topk_exact_match))
     scores["Exact_match_not_none"] = np.mean(get2(topk_exact_match_not_none))
@@ -313,18 +313,6 @@ def eval(path, pred_file, out, data_type=1, topk=1, cbs=False,
             print("===============================+++++++++++++++")
             Path(all_fname).parent.mkdir(parents=True, exist_ok=True)
             if not res_exist or recalc or not Path(all_fname).is_file():
-                res_fname = (
-                    path + "/"
-                    + p1
-                    + "_"
-                    + p2
-                    + "_"
-                    + pred_file
-                    + " ("
-                    + today
-                    + ")"
-                )
-                Path(res_fname).parent.mkdir(parents=True, exist_ok=True)
                 if not Path(all_fname).is_file():
                     with open(all_fname, "w") as f:  # You will need 'wb' mode in Python 2.x
                         w = csv.DictWriter(f, M.keys())
@@ -339,14 +327,6 @@ def eval(path, pred_file, out, data_type=1, topk=1, cbs=False,
                     #group = final_df.groupby("P0", as_index = False)
                     #final_df = group.first() #.reset_index()
                     final_df.to_csv(all_fname, index=False)
-
-                with open(res_fname, "w") as out:
-                    print(res_fname)
-                    print(res_fname, file=out)
-                    for x in M:
-                        print(x, ":", M[x])
-                        print(x, ":", M[x], file=out)
-                print("results were written in", res_fname)
         else:
             raise FileNotFoundError
             return
