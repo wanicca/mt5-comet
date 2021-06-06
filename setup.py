@@ -7,8 +7,8 @@ setup(
     author='Author Name',
     author_email='author@gmail.com',
     description='Description of my package',
-    #packages=find_packages(),    
-    packages= ['rainbow','rainbow.preparation'],
+    packages=find_packages(),    
+    #packages= ['comet','comet.evaluation'],
     #package_dir={'': 'src'},
     #install_requires=['numpy >= 1.11.1', 'matplotlib >= 1.5.1'],
 )
