@@ -52,6 +52,10 @@ def write_csv(filename, data, fieldnames):
                 formatted_d[key] = json.dumps(val)
             writer.writerow(formatted_d)
 
+def read_json(filename):
+    with open(filename) as f:
+      data = json.load(f)
+    return data
 
 def read_jsonl(filename):
     data = []

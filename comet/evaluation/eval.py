@@ -1,8 +1,8 @@
-from evaluation.bleu.bleu import Bleu
-from evaluation.meteor.meteor_nltk import Meteor
-from evaluation.rouge.rouge import Rouge
-from evaluation.cider.cider import Cider
-from evaluation.bert_score.bert_score import BertScore
+from comet.evaluation.bleu.bleu import Bleu
+from comet.evaluation.meteor.meteor_nltk import Meteor
+from comet.evaluation.rouge.rouge import Rouge
+from comet.evaluation.cider.cider import Cider
+from comet.evaluation.bert_score.bert_score import BertScore
 from collections import defaultdict
 from argparse import ArgumentParser
 
@@ -12,11 +12,12 @@ import json
 #sys.setdefaultencoding('utf-8')
 
 class QGEvalCap:
-    def __init__(self, model_key, gts, res, results_file=None):
+    def __init__(self, model_key, gts, res, results_file=None, calc_bert_score=False):
         self.gts = gts
         self.res = res
         self.results_file = results_file
         self.model_key = model_key
+        self.cbs = calc_bert_score
 
     def evaluate(self):
         output = []
@@ -25,8 +26,9 @@ class QGEvalCap:
             (Meteor(),"METEOR"),
             (Rouge(), "ROUGE_L"),
             (Cider(), "CIDEr"),
-            (BertScore(), "Bert Score")
         ]
+        if self.cbs:
+            scorers.append((BertScore(), "Bert Score"))
 
         # =================================================
         # Compute scores
