@@ -1,10 +1,10 @@
 README.md
 setup.py
-MyPackageName.egg-info/PKG-INFO
-MyPackageName.egg-info/SOURCES.txt
-MyPackageName.egg-info/dependency_links.txt
-MyPackageName.egg-info/top_level.txt
 comet/__init__.py
+comet.egg-info/PKG-INFO
+comet.egg-info/SOURCES.txt
+comet.egg-info/dependency_links.txt
+comet.egg-info/top_level.txt
 comet/evaluation/__init__.py
 comet/evaluation/automatic_eval.py
 comet/evaluation/eval.py

@@ -1,12 +1,10 @@
 # +
 import sys
-#sys.path.append("/home/pouramini/mt5-comet")
-sys.path.append("~/comet-atomic-2020-t5-colab")
 import argparse
 import numpy as np
 from nltk.translate.bleu_score import sentence_bleu
-from split.utils import read_jsonl, remove_prefix
-from evaluation.eval import QGEvalCap
+from comet.utils.rwfiles import read_jsonl, remove_prefix
+from comet.evaluation.eval import QGEvalCap
 from tabulate import tabulate
 
 
