@@ -5,7 +5,7 @@ import glob
 import click
 import pandas as pd
 import re
-import argparse
+from os.path import expanduser
 import numpy as np
 from nltk.translate.bleu_score import sentence_bleu
 from comet.utils.rwfiles import *
@@ -167,24 +167,34 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
     help=""
 )
 @click.option(
-    "--recalc",
-    default="",
-    type=str,
-    help="If set to 'clear', it clears last results and recalculate them, if set to 'append' it appends to the file specified with out option"
+    "--clear",
+    "-c",
+    is_flag=True,
+    help="It clears the last results and recalculate them"
+)
+@click.option(
+    "--append",
+    "-a",
+    is_flag=True,
+    help="It appends the new result to the end of output file"
 )
 @click.option(
     "--keys",
     default="head:head,tails:tails,gens:generations",
     type=str,
-    help="A map for head, tails and generations keys"
+    help="A map for head, tails and generations keys, the default is: head:head,tails:tails,gens:generations"
 )
 def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False, 
         ignore_inputs=False,
         task="",
-        recalc="",
+        clear=False,
+        append=False,
         keys=""):
 
     pred_inps = glob.glob(f"{path}/*{input_files_pattern}*")
+    if not pred_inps:
+        print(f"No file was found using *{input_files_pattern}* pattern")
+        return
     for pred_inp in pred_inps:
         pred_file = Path(pred_inp).name
         print(pred_file)
@@ -196,12 +206,16 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
         p2 = P[2]
         p3 = P[3]
         res_exist = False
-        csv_name = out if out else p2 + "_" + p1
-        out_fname = f"{path}/{csv_name}.csv"
+        out = out if out else p2 + "_" + p1
+        if not "/" in out:
+            out_fname = f"{path}/{out}.csv"
+        else:
+            home = expanduser("~")
+            out = out.replace("~/", home + "/")
+            out_fname = out 
 
-        if Path(out_fname).is_file() and not recalc:
-            print(f"{Path(out_fname).name} already exists! set recalc option to 'clear' or 'append' to reevaluate")
-
+        if Path(out_fname).is_file() and not (clear or append):
+            print(f"{out} already exists! use '--clear' or '--append' to reevaluate")
             return
         if ".json" in ext:
             ckp = re.findall(r"\d+", fname)[-1] #checkpoint_step
@@ -311,16 +325,16 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
         M["Checkpoint"] = ckp
         for i, p in enumerate(P[:-3]):
             M["P" + str(i)] = p
-        print("==============  CSV output =================+++++++++++++++")
+        print("==============  CSV output =================")
         print(out_fname)
-        print("===============================+++++++++++++++")
+        print("============================================")
         Path(out_fname).parent.mkdir(parents=True, exist_ok=True)
-        if recalc == "clear":
+        if clear:
             with open(out_fname, "w") as f:  # You will need 'wb' mode in Python 2.x
                 w = csv.DictWriter(f, M.keys())
                 w.writeheader()
                 w.writerow(M)
-        else:
+        elif append:
             with open(out_fname, "a") as f:  # You will need 'wb' mode in Python 2.x
                 w = csv.DictWriter(f, fieldnames=M.keys())
                 w.writerow(M)
