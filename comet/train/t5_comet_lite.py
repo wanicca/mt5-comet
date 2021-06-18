@@ -12,8 +12,8 @@ import argparse
 from tqdm.auto import tqdm
       
 #%% some hyper-parameters
-#underlying_model_name = "google/mt5-small"
-underlying_model_name = "/drive2/pretrained/famt5-base"
+underlying_model_name = "google/mt5-small"
+#underlying_model_name = "/drive2/pretrained/mt5/base/"
 learning_rate = 6.25e-05
 iterations = 10000
 cycle = 1000 #500
@@ -29,9 +29,14 @@ generation_params = {
     "early_stopping":True
 }
 device = 'cuda'
-log_dir = 'lite/'
+log_dir = 'logs/'
 #%% load atomic data
-atomic_dataset = load_dataset('atomic')
+#atomic_dataset = load_dataset('atomic')
+import pandas as pd
+atomic_dataset = {}
+atomic_dataset["train"] = pd.read_table("/drive3/pouramini/data/atomic/en_fa/xAttr_train.tsv")
+atomic_dataset["validation"] = pd.read_table("/drive3/pouramini/data/atomic/en_fa/xAttr_validation.tsv")
+
 atomic_relation_mappings = {
     "oEffect":"<oEffect>",
     "oReact":"<oReact>",
@@ -50,16 +55,17 @@ print("building query responses")
 atomic_query_responses = {}
 for split_name,split_data in atomic_dataset.items():
     atomic_query_responses[split_name] = {}
-    for d in split_data:
-        for rel in atomic_relation_mappings:
-            if len(d[rel])>0: 
-                rel_token = atomic_relation_mappings[rel]
-                query = f"{d['event']} {rel_token} {gen_token}"
-                if query not in atomic_query_responses[split_name]:
-                    atomic_query_responses[split_name][query] = []
-                atomic_query_responses[split_name][query].extend(d[rel])
-                #didn't convert ___ to <blank>
-                #didn't normalize to lowercase
+    for index, d in split_data.iterrows():
+        rel = d["prefix"]
+        if len(d["target_text"])>0: 
+            rel_token = atomic_relation_mappings[rel]
+            event = d["input_text"]
+            query = f"{event} {rel_token} {gen_token}"
+            if query not in atomic_query_responses[split_name]:
+                atomic_query_responses[split_name][query] = []
+            atomic_query_responses[split_name][query].extend(d["target_text"])
+            #didn't convert ___ to <blank>
+            #didn't normalize to lowercase
 
 #flatten
 print("building flattened pairs")
