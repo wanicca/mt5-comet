@@ -1,0 +1,14 @@
+*.pickle
+.idea
+*.iml
+*.pyc
+*.ipynb
+*.bin
+.ipynb_checkpoints
+.pytest_cache
+glue_data/*
+out/*
+venv/*
+output*/*
+wandb/*
+runs/*
