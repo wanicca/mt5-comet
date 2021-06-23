@@ -1,4 +1,5 @@
 import pandas as pd
+import shutil
 import click
 import glob
 from tqdm import tqdm
@@ -6,23 +7,29 @@ from pathlib import Path
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 import numpy as np
+import comet.utils.confmat as confmat
 
 
 @click.command()
 @click.argument("predfile", type=str)
-# @click.argument("results_dir", type=str)
 @click.option(
     "--path",
     envvar="PWD",
     #    multiple=True,
     type=click.Path(),
 )
+@click.option(
+    "--results_dir",
+    default="/home/pouramini/images",
+    type=str,
+    help=""
+)
 @click.option("--unicode", "-m", is_flag=True, help="")
 @click.option(
     "--report",
-    "-r",
-    is_flag=True,
-    help="If set it reports matches in each group",
+    default="Report",
+    type=str,
+    help="If set it reports matches in each group, set a title for reports with this option",
 )
 @click.option(
     "--confusion",
@@ -36,24 +43,38 @@ import numpy as np
     is_flag=True,
     help="If set it reportes matches with/without none targets",
 )
-def comp(predfile, path, unicode, report, confusion, calc_nones):
-    inps = glob.glob(f"{path}/*{predfile}*targets")
+@click.option(
+    "--target_dir",
+    default="",
+    type=str,
+    help=""
+)
+@click.option(
+    "--comp_dir",
+    default="",
+    type=str,
+    help=""
+)
+def comp(predfile, path, results_dir, unicode, report, confusion, calc_nones, target_dir, comp_dir):
+    if not target_dir:
+        target_dir = path
+    inps = glob.glob(f"{target_dir}/*targets")
     target_file = inps[0]
     print("input file:", target_file)
     inps = glob.glob(f"{path}/*{predfile}*predictions")
     pred_file = inps[0]
     name = Path(pred_file).name
-    fid = name.split("predictions")[0]
+    fid = name.split("predictions")[0] if report=="report" else report.lower().replace(" ","_").replace(",","")
     print("input file:", pred_file)
-    inps = glob.glob(f"{path}/*{predfile}*inputs")
+    inps = glob.glob(f"{target_dir}/*inputs")
     input_file = inps[0]
     print("input file:", input_file)
     pred_file2 = ""
-    if Path(f"{path}/comp").exists():
-        inps = glob.glob(f"{path}/comp/*{predfile}*predictions")
+    if comp_dir and Path(f"{comp_dir}").exists():
+        inps = glob.glob(f"{comp_dir}/*{predfile}*predictions")
         pred_file2 = inps[0]
         print("pred file 2:", pred_file2)
-        inps = glob.glob(f"{path}/comp/*{predfile}*inputs")
+        inps = glob.glob(f"{comp_dir}/*inputs")
         input_file2 = inps[0]
         print("input file:", input_file2)
     inpcol = []
@@ -104,6 +125,7 @@ def comp(predfile, path, unicode, report, confusion, calc_nones):
     groups = {}
     g_total = {}
     confdata = []
+    ncc = 0 # none confusions counter
     if confusion:
         label1, label2 = confusion.split("-")
     for i in tqdm(range(N)):
@@ -142,6 +164,8 @@ def comp(predfile, path, unicode, report, confusion, calc_nones):
             c += 1
         if confusion and targcol[i] == label1 and predcol[i] == label2:
             confdata.append([targcol[i], predcol[i], inpcol[i]])
+            if is_none:
+                ncc += 1
 
     m = p + q
     confdata.insert(0, ["target", "prediction", "input"])
@@ -164,24 +188,30 @@ def comp(predfile, path, unicode, report, confusion, calc_nones):
             "input_text1",
             "input_text2",
         ],
-    ).to_csv(f"{path}/{fid}merge.csv", encoding="utf-8")
+    ).to_csv(f"{path}/merge_{fid}.csv", encoding="utf-8")
     if confusion:
-        pd.DataFrame(confdata).to_csv(f"{path}/{fid}{label1}_{label2}.csv")
+        pd.DataFrame(confdata).to_csv(f"{path}/{label1}_{label2}_confusion.csv", index=False)
     if calc_nones:
         print(f"Ratio of nones: ({n} | {n/N:.2f})")
         print(f"Ratio of matches: ({m} | {m/N:.2f})")
         print(f"Ratio of not none matches: ({q} | {q/N:.2f})")
         print(f"Ratio of none matches: ({p} | {p/N:.2f})")
-    if report:
+        if confusion:
+            print(f"Ratio of none confusions between {label1} and {label2}: ({ncc} | {ncc/len(confdata):.2f})")
+    if report and not confusion:
         print("Preparing reports ....")
+        repfile=open(path + "/000_" + report, "w")
+        repfile.close()
         labels = list(set(targcol))
+        if len(labels) == 9:
+            labels = ["xAttr", "xIntent", "xNeed", "xReact", "xEffect", "xWant", "oReact", "oEffect", "oWant"]
         cm = confusion_matrix(targcol, predcol, labels=labels)
         df = pd.DataFrame(cm, columns=labels)
         df.insert(loc=0, column="rels", value=labels)
-        df.to_csv(path + "/" + fid + "cm.csv", index=False)
-        rep = classification_report(targcol, predcol)
+        df.to_csv(path + "/cm_" + fid + ".csv", index=False)
+        rep = classification_report(targcol, predcol, labels=labels, zero_division=1)
         print(rep)
-        report_dict = classification_report(targcol, predcol, output_dict=True)
+        report_dict = classification_report(targcol, predcol, output_dict=True, labels=labels, zero_division=1)
         repdf = pd.DataFrame(report_dict)
         repdf = repdf.round(2).transpose()
         repdf.insert(
@@ -189,7 +219,11 @@ def comp(predfile, path, unicode, report, confusion, calc_nones):
             column="class",
             value=labels + ["accuracy", "macro avg", "weighted avg"],
         )
-        repdf.to_csv(path + "/" + fid + "results.csv", index=False)
+        repdf.to_csv(path + "/report_" + fid + ".csv", index=False)
+        acc_, cr = confmat.report(y_test=targcol, y_pred=predcol, labels=labels, title=report, image=path + "/image_" + fid + ".png")
+        if results_dir:
+            shutil.copy(path + "/image_" + fid + ".png", results_dir)
+
     if groups:
         sg = 0
         sn = 0

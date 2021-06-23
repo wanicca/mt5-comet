@@ -5,3 +5,11 @@ def arg2dict(arg):
         for sub in arg.split(",")
         if ":" in sub
     )
+
+def to_unicode(text, remove_quotes=True):
+    if remove_quotes:
+        text = text[2:-1]
+    text = text.encode("raw_unicode_escape")
+    text = text.decode("unicode_escape")
+    text = text.encode("raw_unicode_escape")
+    return text.decode()

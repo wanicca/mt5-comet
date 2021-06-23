@@ -1,0 +1,48 @@
+2021-06-21 21:12:38,143 INFO    MainThread:14550 [wandb_setup.py:_flush():69] setting env: {'mode': 'dryrun'}
+2021-06-21 21:12:38,143 INFO    MainThread:14550 [wandb_init.py:_log_setup():334] Logging user logs to /home/pouramini/mt5-comet/wandb/offline-run-20210621_211238-36qlef52/logs/debug.log
+2021-06-21 21:12:38,143 INFO    MainThread:14550 [wandb_init.py:_log_setup():335] Logging internal logs to /home/pouramini/mt5-comet/wandb/offline-run-20210621_211238-36qlef52/logs/debug-internal.log
+2021-06-21 21:12:38,143 INFO    MainThread:14550 [wandb_init.py:init():367] calling init triggers
+2021-06-21 21:12:38,143 INFO    MainThread:14550 [wandb_init.py:init():374] wandb.init called with sweep_config: {}
+config: {}
+2021-06-21 21:12:38,143 INFO    MainThread:14550 [wandb_init.py:init():416] starting backend
+2021-06-21 21:12:38,144 INFO    MainThread:14550 [backend.py:_multiprocessing_setup():71] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2021-06-21 21:12:38,207 INFO    MainThread:14550 [backend.py:ensure_launched():123] starting backend process...
+2021-06-21 21:12:38,259 INFO    MainThread:14550 [backend.py:ensure_launched():128] started backend process with pid: 14663
+2021-06-21 21:12:38,260 INFO    MainThread:14550 [wandb_init.py:init():421] backend started and connected
+2021-06-21 21:12:38,262 INFO    MainThread:14550 [wandb_init.py:init():461] updated telemetry
+2021-06-21 21:12:38,263 INFO    MainThread:14550 [wandb_init.py:init():518] starting run threads in backend
+2021-06-21 21:12:41,148 INFO    MainThread:14550 [wandb_run.py:_console_start():1480] atexit reg
+2021-06-21 21:12:41,148 INFO    MainThread:14550 [wandb_run.py:_redirect():1343] redirect: SettingsConsole.REDIRECT
+2021-06-21 21:12:41,149 INFO    MainThread:14550 [wandb_run.py:_redirect():1348] Redirecting console.
+2021-06-21 21:12:41,149 INFO    MainThread:14550 [redirect.py:install():213] install start
+2021-06-21 21:12:41,150 INFO    MainThread:14550 [redirect.py:install():228] install stop
+2021-06-21 21:12:41,150 INFO    MainThread:14550 [redirect.py:install():213] install start
+2021-06-21 21:12:41,150 INFO    MainThread:14550 [redirect.py:install():228] install stop
+2021-06-21 21:12:41,150 INFO    MainThread:14550 [wandb_run.py:_redirect():1394] Redirects installed.
+2021-06-21 21:12:41,150 INFO    MainThread:14550 [wandb_init.py:init():542] run started, returning control to user process
+2021-06-21 21:12:41,152 INFO    MainThread:14550 [wandb_run.py:_config_callback():733] config_cb None None {'return_dict': True, 'output_hidden_states': False, 'output_attentions': False, 'torchscript': False, 'use_bfloat16': False, 'pruned_heads': {}, 'tie_word_embeddings': False, 'is_encoder_decoder': True, 'is_decoder': False, 'add_cross_attention': False, 'tie_encoder_decoder': False, 'max_length': 20, 'min_length': 0, 'do_sample': False, 'early_stopping': False, 'num_beams': 1, 'num_beam_groups': 1, 'diversity_penalty': 0.0, 'temperature': 1.0, 'top_k': 50, 'top_p': 1.0, 'repetition_penalty': 1.0, 'length_penalty': 1.0, 'no_repeat_ngram_size': 0, 'encoder_no_repeat_ngram_size': 0, 'bad_words_ids': None, 'num_return_sequences': 1, 'chunk_size_feed_forward': 0, 'output_scores': False, 'return_dict_in_generate': False, 'forced_bos_token_id': None, 'forced_eos_token_id': None, 'remove_invalid_values': False, 'architectures': ['MT5ForConditionalGeneration'], 'finetuning_task': None, 'id2label': {0: 'LABEL_0', 1: 'LABEL_1'}, 'label2id': {'LABEL_0': 0, 'LABEL_1': 1}, 'tokenizer_class': 'T5Tokenizer', 'prefix': None, 'bos_token_id': None, 'pad_token_id': 0, 'eos_token_id': 1, 'sep_token_id': None, 'decoder_start_token_id': 0, 'task_specific_params': None, 'problem_type': None, '_name_or_path': 'google/mt5-small', 'transformers_version': '4.8.0.dev0', 'model_type': 'mt5', 'vocab_size': 250100, 'd_model': 512, 'd_kv': 64, 'd_ff': 1024, 'num_layers': 8, 'num_decoder_layers': 8, 'num_heads': 6, 'relative_attention_num_buckets': 32, 'dropout_rate': 0.1, 'layer_norm_epsilon': 1e-06, 'initializer_factor': 1.0, 'feed_forward_proj': 'gated-gelu', 'use_cache': True, 'output_dir': 'output_trans_t5_small', 'overwrite_output_dir': False, 'do_train': True, 'do_eval': True, 'do_predict': True, 'evaluation_strategy': 'no', 'prediction_loss_only': False, 'per_device_train_batch_size': 1, 'per_device_eval_batch_size': 8, 'per_gpu_train_batch_size': 'None', 'per_gpu_eval_batch_size': 'None', 'gradient_accumulation_steps': 1, 'eval_accumulation_steps': 'None', 'learning_rate': 5e-05, 'weight_decay': 0.0, 'adam_beta1': 0.9, 'adam_beta2': 0.999, 'adam_epsilon': 1e-08, 'max_grad_norm': 1.0, 'num_train_epochs': 3.0, 'max_steps': 5000, 'lr_scheduler_type': 'linear', 'warmup_ratio': 0.0, 'warmup_steps': 0, 'logging_dir': 'runs/Jun21_21-11-56_nlplab-server', 'logging_strategy': 'steps', 'logging_first_step': False, 'logging_steps': 500, 'save_strategy': 'steps', 'save_steps': 5000, 'save_total_limit': 4, 'no_cuda': False, 'seed': 42, 'fp16': False, 'fp16_opt_level': 'O1', 'fp16_backend': 'auto', 'fp16_full_eval': False, 'local_rank': -1, 'tpu_num_cores': 'None', 'tpu_metrics_debug': False, 'debug': '[]', 'dataloader_drop_last': False, 'eval_steps': 500, 'dataloader_num_workers': 0, 'past_index': -1, 'run_name': 'output_trans_t5_small', 'disable_tqdm': False, 'remove_unused_columns': True, 'label_names': 'None', 'load_best_model_at_end': False, 'metric_for_best_model': 'None', 'greater_is_better': 'None', 'ignore_data_skip': False, 'sharded_ddp': '[]', 'deepspeed': 'None', 'label_smoothing_factor': 0.0, 'adafactor': False, 'group_by_length': False, 'length_column_name': 'length', 'report_to': "['tensorboard', 'wandb']", 'ddp_find_unused_parameters': 'None', 'dataloader_pin_memory': True, 'skip_memory_metrics': True, 'use_legacy_prediction_loop': False, 'push_to_hub': False, 'resume_from_checkpoint': 'None', 'log_on_each_node': True, '_n_gpu': 1, 'mp_parameters': '', 'sortish_sampler': False, 'predict_with_generate': True, 'train_batch_size': 1, 'eval_batch_size': 8}
+2021-06-21 21:12:41,156 INFO    MainThread:14550 [wandb_watch.py:watch():39] Watching
+2021-06-21 21:12:41,808 INFO    MainThread:14550 [wandb_run.py:_atexit_cleanup():1450] got exitcode: 1
+2021-06-21 21:12:41,810 INFO    MainThread:14550 [wandb_run.py:_restore():1422] restore
+2021-06-21 21:12:41,810 INFO    MainThread:14550 [redirect.py:uninstall():232] uninstall start
+2021-06-21 21:12:41,810 INFO    MainThread:14550 [redirect.py:_stop():287] _stop: stdout
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:_stop():293] _stop closed: stdout
+2021-06-21 21:12:41,811 INFO    stdout    :14550 [redirect.py:_pipe_relay():129] relay done saw last write: stdout
+2021-06-21 21:12:41,811 INFO    stdout    :14550 [redirect.py:_pipe_relay():145] relay done done: stdout
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:_stop():299] _stop joined: stdout
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:_stop():301] _stop rd closed: stdout
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:uninstall():236] uninstall done
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:uninstall():232] uninstall start
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:_stop():287] _stop: stderr
+2021-06-21 21:12:41,811 INFO    MainThread:14550 [redirect.py:_stop():293] _stop closed: stderr
+2021-06-21 21:12:41,811 INFO    stderr    :14550 [redirect.py:_pipe_relay():129] relay done saw last write: stderr
+2021-06-21 21:12:41,812 INFO    stderr    :14550 [redirect.py:_pipe_relay():145] relay done done: stderr
+2021-06-21 21:12:41,812 INFO    MainThread:14550 [redirect.py:_stop():299] _stop joined: stderr
+2021-06-21 21:12:41,812 INFO    MainThread:14550 [redirect.py:_stop():301] _stop rd closed: stderr
+2021-06-21 21:12:41,812 INFO    MainThread:14550 [redirect.py:uninstall():236] uninstall done
+2021-06-21 21:12:41,815 INFO    MainThread:14550 [wandb_run.py:_wait_for_finish():1572] got exit ret: 
+2021-06-21 21:12:43,817 INFO    MainThread:14550 [wandb_run.py:_wait_for_finish():1572] got exit ret: done: true
+exit_result {
+}
+
+2021-06-21 21:12:45,264 INFO    MainThread:14550 [wandb_run.py:_show_summary():1727] rendering summary

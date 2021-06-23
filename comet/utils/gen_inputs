@@ -1,0 +1,6 @@
+#!usr/bin/sh
+
+source ~/aa
+myconv $1 --selcol=$2_inputs-input_text+target_text --col2file
+myconv $1 --selcol=$2_targets-prefix --col2file
+

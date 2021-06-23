@@ -1,0 +1,14 @@
+  0%|          | 0/5000 [00:00<?, ?it/s]  0%|          | 1/5000 [00:00<38:55,  2.14it/s]Traceback (most recent call last):
+  File "comet/train/run_translation.py", line 607, in <module>
+    main()
+  File "comet/train/run_translation.py", line 527, in main
+    train_result = trainer.train(resume_from_checkpoint=checkpoint)
+  File "/home/pouramini/transformers/src/transformers/trainer.py", line 1263, in train
+    tr_loss += self.training_step(model, inputs)
+  File "/home/pouramini/transformers/src/transformers/trainer.py", line 1766, in training_step
+    loss.backward()
+  File "/home/pouramini/miniconda3/lib/python3.7/site-packages/torch/tensor.py", line 221, in backward
+    torch.autograd.backward(self, gradient, retain_graph, create_graph)
+  File "/home/pouramini/miniconda3/lib/python3.7/site-packages/torch/autograd/__init__.py", line 132, in backward
+    allow_unreachable=True)  # allow_unreachable flag
+RuntimeError: CUDA out of memory. Tried to allocate 490.00 MiB (GPU 0; 7.93 GiB total capacity; 5.43 GiB already allocated; 411.31 MiB free; 5.84 GiB reserved in total by PyTorch)

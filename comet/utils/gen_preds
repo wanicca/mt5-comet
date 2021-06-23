@@ -1,0 +1,6 @@
+#!/usr/bin/sh
+source ~/aa
+cp ~/pet/data/atomic/$1_inputs  "${PWD}"/$1_inputs
+cp ~/pet/data/atomic/$1_targets  "${PWD}"/$1_targets
+myconv $1_predictions --selcol=predictions.jsonl@label --new --no_header
+

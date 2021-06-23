@@ -6,8 +6,8 @@ comet.egg-info/SOURCES.txt
 comet.egg-info/dependency_links.txt
 comet.egg-info/top_level.txt
 comet/evaluation/__init__.py
-comet/evaluation/automatic_eval.py
 comet/evaluation/eval.py
+comet/evaluation/myeval.py
 comet/evaluation/bert_score/__init__.py
 comet/evaluation/bert_score/bert_score.py
 comet/evaluation/bert_score/score.py
@@ -24,5 +24,8 @@ comet/evaluation/meteor/meteor_nltk.py
 comet/evaluation/rouge/__init__.py
 comet/evaluation/rouge/rouge.py
 comet/utils/__init__.py
+comet/utils/confmat.py
+comet/utils/mycomp.py
 comet/utils/myconv.py
-comet/utils/utils.py
+comet/utils/myfiles.py
+comet/utils/myutils.py

@@ -9,7 +9,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 import os,time
 import argparse
-from tqdm.auto import tqdm
+from tqdm import tqdm
       
 #%% some hyper-parameters
 underlying_model_name = "google/mt5-small"
@@ -19,7 +19,7 @@ iterations = 10000
 cycle = 1000 #500
 warm_up_steps = 0.002*iterations
 weight_decay = 0.01
-batch_size = 8
+batch_size = 1
 shuffle = True
 shuffle_evaluation=False
 validation_size = 2000 #10000
@@ -129,7 +129,7 @@ best_dev_loss = 1e10
 
 #%%
 train_iter = iter(train_dataloader)
-pbar = tqdm(total=iterations,dynamic_ncols=True)
+pbar = tqdm(total=iterations) #,dynamic_ncols=True)
 while step <= iterations:
     if (step % cycle == 0 and step > 0): #validation
         with torch.no_grad():

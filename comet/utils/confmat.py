@@ -1,5 +1,6 @@
 import seaborn as sn
 import pandas as pd
+import numpy as np
 from numpy import newaxis
 from sklearn.metrics import (
     confusion_matrix,
@@ -28,11 +29,27 @@ def plot_heat_map(ax, X, Y, Z, xlabel, ylabel, format="d", title="Heat Map"):
         ax=ax,
     )  # font size
     ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    #ax.set_xlabel(xlabel)
+    #ax.set_ylabel(ylabel)
 
-def plot_classification_report(cr, ax):
-    sn.heatmap(pd.DataFrame(cr).iloc[:-1, :].T, annot=True, ax=ax)
+def plot_classification_report(cr, ax, title):
+    df = pd.DataFrame(cr).iloc[:, :].T
+    df = df.round(2)
+    mask = np.zeros(df.shape)
+    mask[:, -1] = True 
+    sn.heatmap(df, 
+            mask=mask,
+            annot=True, 
+            cmap="YlGnBu",
+            fmt='g',
+            ax=ax)       
+    for (j,i), label in np.ndenumerate(df.values):
+        if i == 3:
+            ax.text(i+0.5, j+0.5, label,
+                fontdict=dict(ha='center',  va='center',
+                                 color='g', fontsize=18))
+
+    ax.set_title(title)
 
 def plot_confusion_matrix(
     ax, cm, labels, normalize=False, title="Confusion Matrix"
@@ -75,14 +92,15 @@ def report(
     normalized_conf=True,
     figsize=(10, 18),
     title="",
+    image=""
 ):
     acc = accuracy_score(y_test, y_pred)
-    cr = classification_report(y_test, y_pred, output_dict=True)
+    cr = classification_report(y_test, y_pred, output_dict=True, labels=labels, zero_division=1)
     # plot confusion matrix
     if not labels:
         labels = list(set(y_test))
     if plot_conf:
-        cm = confusion_matrix(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred, labels=labels)
         precision, recall, fscore, support = score(
             y_test, y_pred, average="macro"
         )
@@ -92,10 +110,11 @@ def report(
             ax1 = fig.add_subplot(gs[0, 0])
             ax2 = fig.add_subplot(gs[1, 0])
         if title == "":
-            title = f"Confusion matrix"
-        title += f", acc-{acc.round(2)} pr-{precision.round(2)} re-{recall.round(2)} f1-{fscore.round(2)}"
-        plot_classification_report(cr, ax=ax1)
+            title += f"acc-{acc.round(2)} pr-{precision.round(2)} re-{recall.round(2)} f1-{fscore.round(2)}"
+        plot_classification_report(cr, ax1, title)
         plot_confusion_matrix(ax2, cm, labels, normalized_conf, title)
+        if image:
+            plt.savefig(image)
 
     return acc, cr
 
