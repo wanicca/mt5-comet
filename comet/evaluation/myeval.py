@@ -79,10 +79,10 @@ class QGEvalCap:
     def evaluate(self):
         output = []
         scorers = [
-            (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
-            (Meteor(),"METEOR"),
+#            (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
+#            (Meteor(),"METEOR"),
             (Rouge(), "ROUGE_L"),
-            (Cider(), "CIDEr"),
+#            (Cider(), "CIDEr"),
         ]
         if self.cbs:
             scorers.append((BertScore(), "Bert Score"))
@@ -149,12 +149,12 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
 
     topk_gts = {}
     topk_res = {}
-    topk_exact_match = []
-    topk_exact_match_not_none = []
+    topk_exact_match = 0 
+    topk_exact_match_not_none = 0
     topk_bleu_score = []
 
-    topk_is_head = []
-
+    topk_is_head = 0
+    print("len data", len(data))
     for i, l in enumerate(data):
         (gens, tails, head) = get_refs_preds(l, type=data_type, keys=keys)
         #print("Gens:", gens)
@@ -201,28 +201,21 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
             
             topk_bleu_score.append((l, b))
             if g in sentence_tails:
-                topk_exact_match.append((l, 1))
+                topk_exact_match += 1
                 if g != "none" and g != "هیچ یک" and g != "<object>none</object>":
-                    #print("Exact match between", g, " and ", sentence_tails)
-                    topk_exact_match_not_none.append((l, 1))
-            else:
-                topk_exact_match.append((l, 0))
-                if g != "none" and g != "هیچ یک" and g != "<object>none</object>":
-                    topk_exact_match_not_none.append((l, 0))
+                    topk_exact_match_not_none += 1
             if g == head:
-                topk_is_head.append((l, 1))
-            else:
-                topk_is_head.append((l, 0))
-
+                topk_is_head += 1
+    N = len(topk_gts)
     print("---------------TOP K={}---------------".format(k))
-    print("Exact Match:", np.mean(get2(topk_exact_match)))
-    print("Exact Match Not None", np.mean(get2(topk_exact_match_not_none)))
-    print("Mean sent BLEU score", np.mean(get2(topk_bleu_score)))
+    print("Exact Match: {}  {:.2f}".format(topk_exact_match, topk_exact_match / N))
+    print("Exact Match Not None {}  {:.2f}".format(topk_exact_match_not_none, topk_exact_match_not_none / N))
+    #print("Mean sent BLEU score", np.mean(get2(topk_bleu_score)))
     print("len gts", len(topk_gts))
     QGEval = QGEvalCap(out, topk_gts, topk_res, calc_bert_score=cbs)
     scores,_ = QGEval.evaluate()
-    scores["Exact_match"] = np.mean(get2(topk_exact_match))
-    scores["Exact_match_not_none"] = np.mean(get2(topk_exact_match_not_none))
+    scores["Exact_match"] = round(topk_exact_match / N,2)
+    scores["Exact_match_not_none"] = round(topk_exact_match_not_none / N,2)
     scores["Mean sent BLEU score"] = np.mean(get2(topk_bleu_score))
     scores["Data rows"] = len(data)
     scores["Records"] = len(topk_gts)
@@ -357,8 +350,8 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
             _from = 0
             _to = -1
             if from_to:
-                _from = int(from_to.split("_")[0])
-                _to = int(from_to.split("_")[1])
+                _from = int(from_to.split("-")[0])
+                _to = int(from_to.split("-")[1])
             if inps and not ignore_inputs:
                 inp_file = inps[0]  
                 with open(inp_file) as f:
@@ -395,11 +388,8 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
                     input_lines=input_lines[_from:_to]
                 target_lines=target_lines[_from:_to]
                 pred_lines=pred_lines[_from:_to]
-                print("len pred_lines", len(target_lines))
             if not inp_dict:
-                print("len pred_lines", len(pred_lines))
                 input_lines = [str(k) for k in range(len(target_lines))]
-                print("len pred_lines", len(target_lines))
                 inp_dict = {
                     str(k): {"targets": [], "gens": []} for k in range(len(target_lines))
                 }
@@ -415,7 +405,9 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
                     print(target)
                     _match += 1
 
+            print("input/target lines:", len(target_lines))
             print("len unique inputs:", len(inp_dict))
+            print("ratio of unique inputs:{:.2f}".format(len(inp_dict)/len(target_lines)))
             print("Nones:{} {:.2f}".format(_match_none, _match_none/len(input_lines)))
             print("Matches:{} {:.2f}".format(_match, _match/len(input_lines)))
             cc = 1
@@ -448,12 +440,13 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
             scores = topk_eval(out, data, data_type = 2, k=1, keys=keys, cbs=cbs)
             # -
         # Saving Results
+        print(scores)
         mydate = datetime.datetime.today()
         today = mydate.strftime("%Y-%m-%d")
 
         M = {}
         M["Task"] = task
-        M["P0"] = P[0] 
+        M["Checkpoint"] = ckp
         if not scores:
             print("No score")
         for key, val in scores.items():
@@ -468,7 +461,7 @@ def eval(path, input_files_pattern, out, data_type=2, topk=1, cbs=False,
             if st:
                 M["T" + str(i)] = st
         M["Date"] = today
-        M["Checkpoint"] = ckp
+        M["P0"] = P[0] 
         for i, p in enumerate(P[:-3]):
             M["P" + str(i)] = p
         print("==============  CSV output =================")
