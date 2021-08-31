@@ -8,11 +8,17 @@ import random
 def read_csv(input_file, quotechar='"', delimiter=",", skip_header=False):
     """Reads a tab separated value file."""
     with open(input_file, "r") as f:
-        reader = csv.reader(f, delimiter=delimiter, quotechar=quotechar, quoting=csv.QUOTE_ALL, skipinitialspace=True)
+        reader = csv.reader(
+            f,
+            delimiter=delimiter,
+            quotechar=quotechar,
+            quoting=csv.QUOTE_ALL,
+            skipinitialspace=True,
+        )
         lines = []
         for line in reader:
             if sys.version_info[0] == 2:
-                line = list(unicode(cell, 'utf-8') for cell in line)
+                line = list(unicode(cell, "utf-8") for cell in line)
             lines.append(line)
         if skip_header:
             lines = lines[1:]
@@ -21,8 +27,8 @@ def read_csv(input_file, quotechar='"', delimiter=",", skip_header=False):
 
 def write_tsv(output_file, data, header=False):
     keys = list(data[0].keys())
-    with open(output_file, 'w') as f:
-        w = csv.DictWriter(f, keys, delimiter='\t', lineterminator='\n')
+    with open(output_file, "w") as f:
+        w = csv.DictWriter(f, keys, delimiter="\t", lineterminator="\n")
         if header:
             w.writeheader()
         for r in data:
@@ -32,8 +38,8 @@ def write_tsv(output_file, data, header=False):
 
 def write_array2tsv(output_file, data, header=False):
     keys = range(len(data[0]))
-    with open(output_file, 'w') as f:
-        w = csv.DictWriter(f, keys, delimiter='\t', lineterminator='\n')
+    with open(output_file, "w") as f:
+        w = csv.DictWriter(f, keys, delimiter="\t", lineterminator="\n")
         if header:
             w.writeheader()
         for r in data:
@@ -42,7 +48,7 @@ def write_array2tsv(output_file, data, header=False):
 
 
 def write_csv(filename, data, fieldnames):
-    with open(filename, 'w', newline='') as csvfile:
+    with open(filename, "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
@@ -52,10 +58,12 @@ def write_csv(filename, data, fieldnames):
                 formatted_d[key] = json.dumps(val)
             writer.writerow(formatted_d)
 
+
 def read_json(filename):
     with open(filename) as f:
-      data = json.load(f)
+        data = json.load(f)
     return data
+
 
 def read_jsonl(filename):
     data = []
@@ -66,7 +74,7 @@ def read_jsonl(filename):
 
 
 def write_items(output_file, items):
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         for concept in items:
             f.write(concept + "\n")
     f.close()
@@ -86,7 +94,7 @@ def count_relation(d):
             relation_count[r] = 0
         relation_count[r] += 1
 
-        prefix = l[0]+l[1]
+        prefix = l[0] + l[1]
         if prefix not in prefix_count.keys():
             prefix_count[prefix] = 0
         prefix_count[prefix] += 1
@@ -96,9 +104,15 @@ def count_relation(d):
             head_count[head] = 0
         head_count[head] += 1
 
-    sorted_relation_count = dict(sorted(relation_count.items(), key=operator.itemgetter(1), reverse=True))
-    sorted_prefix_count = dict(sorted(prefix_count.items(), key=operator.itemgetter(1), reverse=True))
-    sorted_head_count = dict(sorted(head_count.items(), key=operator.itemgetter(1), reverse=True))
+    sorted_relation_count = dict(
+        sorted(relation_count.items(), key=operator.itemgetter(1), reverse=True)
+    )
+    sorted_prefix_count = dict(
+        sorted(prefix_count.items(), key=operator.itemgetter(1), reverse=True)
+    )
+    sorted_head_count = dict(
+        sorted(head_count.items(), key=operator.itemgetter(1), reverse=True)
+    )
 
     print("Relations:")
     for r in sorted_relation_count.keys():
@@ -126,7 +140,14 @@ def get_head_set(d):
     return set([l[0] for l in d])
 
 
-def head_based_split(data, dev_size, test_size, head_size_threshold=500, dev_heads=[], test_heads=[]):
+def head_based_split(
+    data,
+    dev_size,
+    test_size,
+    head_size_threshold=500,
+    dev_heads=[],
+    test_heads=[],
+):
     """
     :param data: the tuples to split according to the heads, where the head is the first element of each tuple
     :param dev_size: target size of the dev set
@@ -186,11 +207,13 @@ def head_based_split(data, dev_size, test_size, head_size_threshold=500, dev_hea
 
     dev = [l for l in data if l[0] in dev_selected_heads.keys()]
 
-    dev_test_heads = set(list(dev_selected_heads.keys()) + list(test_selected_heads.keys()))
+    dev_test_heads = set(
+        list(dev_selected_heads.keys()) + list(test_selected_heads.keys())
+    )
     train = [l for l in data if l[0] not in dev_test_heads]
 
     return train, dev, test
 
 
 def remove_prefix(text, prefix):
-    return text[text.startswith(prefix) and len(prefix):]
+    return text[text.startswith(prefix) and len(prefix) :]

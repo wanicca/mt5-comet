@@ -1,5 +1,5 @@
 python comet/train/run_comet.py \
-    --model_name_or_path /drive2/pretrained/famt5-base \
+    --model_name_or_path t5-small \
     --source_lang en \
     --target_lang en \
     --source_prefix "atomic: " \
