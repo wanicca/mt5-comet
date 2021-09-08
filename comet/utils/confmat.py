@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
+
 def plot_heat_map(ax, X, Y, Z, xlabel, ylabel, format="d", title="Heat Map"):
 
     sn.set(font_scale=1.4)  # for label size
@@ -29,27 +30,27 @@ def plot_heat_map(ax, X, Y, Z, xlabel, ylabel, format="d", title="Heat Map"):
         ax=ax,
     )  # font size
     ax.set_title(title)
-    #ax.set_xlabel(xlabel)
-    #ax.set_ylabel(ylabel)
+    # ax.set_xlabel(xlabel)
+    # ax.set_ylabel(ylabel)
+
 
 def plot_classification_report(cr, ax, title):
     df = pd.DataFrame(cr).iloc[:, :].T
     df = df.round(2)
     mask = np.zeros(df.shape)
-    mask[:, -1] = True 
-    sn.heatmap(df, 
-            mask=mask,
-            annot=True, 
-            cmap="YlGnBu",
-            fmt='g',
-            ax=ax)       
-    for (j,i), label in np.ndenumerate(df.values):
+    mask[:, -1] = True
+    sn.heatmap(df, mask=mask, annot=True, cmap="YlGnBu", fmt="g", ax=ax)
+    for (j, i), label in np.ndenumerate(df.values):
         if i == 3:
-            ax.text(i+0.5, j+0.5, label,
-                fontdict=dict(ha='center',  va='center',
-                                 color='g', fontsize=18))
+            ax.text(
+                i + 0.5,
+                j + 0.5,
+                label,
+                fontdict=dict(ha="center", va="center", color="g", fontsize=18),
+            )
 
     ax.set_title(title)
+
 
 def plot_confusion_matrix(
     ax, cm, labels, normalize=False, title="Confusion Matrix"
@@ -92,10 +93,12 @@ def report(
     normalized_conf=True,
     figsize=(10, 18),
     title="",
-    image=""
+    image="",
 ):
     acc = accuracy_score(y_test, y_pred)
-    cr = classification_report(y_test, y_pred, output_dict=True, labels=labels, zero_division=1)
+    cr = classification_report(
+        y_test, y_pred, output_dict=True, labels=labels, zero_division=1
+    )
     # plot confusion matrix
     if not labels:
         labels = list(set(y_test))
