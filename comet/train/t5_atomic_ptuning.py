@@ -25,13 +25,15 @@ cfg = {}
 old_vars = set()
 old_vars.update(k for k in globals() if not k.startswith('_'))
 #%% some hyper-parameters
-underlying_model_name = "t5-base"
+model_id = "mt5-small"
+underlying_model_name = f"/home/pouramini/pret/{model_id}/"
+#underlying_model_name = "logs/mt5-small/prompt_length_3/last"
 learning_rate = 6.25e-05
 iterations = 10000
 cycle = 1000
 warm_up_steps = 0.002*iterations
 weight_decay = 0.01
-batch_size = 64
+batch_size = 16
 #Cut down memory usage by accumulating tiny steps for multiple backwards;
 #Should be divided exactly by batch_size
 accumulation_tiny_steps = 1 
@@ -48,26 +50,50 @@ generation_params = {
 ddp = args.local_rank is not None
 device = 'cuda'
 log_dir = 'logs/'
-dataset_path = "data/atomic/v4_atomic_all_agg.csv"
+dataset_path = "/home/pouramini/mt5-comet/data/v4_atomic_all_agg.csv"
 prompt_length = 3
 atomic_relation_prompt_lengths = {
+    "xIntent":prompt_length,
     "oEffect":prompt_length,
     "oReact":prompt_length,
     "oWant":prompt_length,
     "xAttr":prompt_length,
     "xEffect":prompt_length,
-    "xIntent":prompt_length,
     "xNeed":prompt_length,
     "xReact":prompt_length,
     "xWant":prompt_length
+}
+atomic_relation_prompt_lengths = {
+    "xIntent":prompt_length
 }
 #%%
 new_vars = set(k for k in globals() if not k.startswith('_'))
 cfg_vars = new_vars-old_vars
 cfg = {k:v for k,v in globals().items() if k in cfg_vars }
 #%% load atomic data
-def load_atomic_dataset(path):
 
+import pandas as pd
+data_paths = {}
+data_paths["train"] = pd.read_table("/home/pouramini/atomic/xIntent_en_train_no_dups.tsv")
+data_paths["validation"] = pd.read_table("/home/pouramini/atomic/xIntent_en_fa_validation_no_dups.tsv")
+
+def my_load_dataset(split_data, split):
+    data_split = {}
+    split_data["target_text"] = split_data["target_text"].astype(str)
+    for index, d in split_data.iterrows():
+        rel = d["prefix"]
+        if len(d["target_text"])>0: 
+            event = d["input_text"]
+            if event not in data_split:
+                data_split[event] = {"event":event, 'split':split}
+            if not rel in data_split[event]:
+                data_split[event][rel] = []
+            data_split[event][rel].append(d["target_text"])
+            #didn't convert ___ to <blank>
+            #didn't normalize to lowercase
+    return list(data_split.values())
+
+def load_atomic_dataset(path):
     data={}
     with open(path) as source_file:
         source_reader = csv.reader(source_file)
@@ -93,7 +119,12 @@ def load_atomic_dataset(path):
     return data
 
 # atomic_dataset = load_atomic_dataset(dataset_path)
-atomic_dataset = load_dataset("atomic")
+#atomic_dataset = load_dataset("atomic")
+atomic_dataset = {}
+for split, split_data in data_paths.items():
+    print("split:", split)
+    atomic_dataset[split] = my_load_dataset(split_data, split)
+
 placeholder_token = "<extra_id_0>"
 #%% dpp initialize
 is_main_process = (not ddp or local_rank == 0) 
@@ -210,14 +241,16 @@ for rel in atomic_relation_mappings:
         batch_size=node_batch_size,sampler=train_sampler[rel],
         collate_fn=collate_fn_for_flattened)
     if is_main_process:
+        print("dev data loader")
         dev_dataloader[rel] = torch.utils.data.DataLoader(atomic_flattened['validation'][rel],
             batch_size=node_batch_size,shuffle=shuffle_evaluation,
             collate_fn=collate_fn_for_flattened)
 
 # %% prepare for training
-model_name = os.path.join(f"t5-base",f"prompt_length_{prompt_length}",f"{learning_rate}_{cycle}_{iterations}_"
+model_name = os.path.join(model_id,f"prompt_length_{prompt_length}",f"{learning_rate}_{cycle}_{iterations}_"
     f"{time.strftime('%Y%m%d %a %H:%M:%S')}")
 if is_main_process:
+    print("init sw to: ", os.path.join(log_dir,model_name))
     sw = SummaryWriter(os.path.join(log_dir,model_name))
     serialization_dir = os.path.join(log_dir,model_name)
     tokenizer.save_pretrained(serialization_dir)
@@ -251,6 +284,7 @@ for rel,wrapped_model in wrapped_models.items():
         pbar = tqdm(total=iterations,dynamic_ncols=True,desc=rel)
     while step <= iterations:
         if is_main_process and (step % cycle == 0 and step > 0): #validation
+            print("start validating...")
             with torch.no_grad():
                 if ddp:
                     wrapped_model.module.update_model_weight()
