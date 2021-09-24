@@ -33,7 +33,7 @@ class BertScore:
         self._hypo_for_image = {}
         self.ref_for_image = {}
 
-    def compute_score(self, gts, res):
+    def compute_score(self, gts, res, model_type="bert-base-uncased"):
 
         assert(gts.keys() == res.keys())
         imgIds = gts.keys()
@@ -55,7 +55,7 @@ class BertScore:
             ref_input += ref
             same_indices.append(len(ref_input))
 
-        p, r, f_scores = score(hyp_input, ref_input , model_type="bert-base-uncased")
+        p, r, f_scores = score(hyp_input, ref_input , model_type=model_type)
  
         prev_idx = 0
         aggreg_f1_scores = []
@@ -69,23 +69,30 @@ class BertScore:
         return "Bert Score"
 
 class QGEvalCap:
-    def __init__(self, model_key, gts, res, results_file=None, calc_bert_score=False):
+    def __init__(self, model_key, gts, res, metrics={}, results_file=""):
         self.gts = gts
         self.res = res
         self.results_file = results_file
         self.model_key = model_key
-        self.cbs = calc_bert_score
+        self.metrics = metrics 
 
-    def evaluate(self):
+    def evaluate(self, model_type=""):
         output = []
-        scorers = [
-#            (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
-#            (Meteor(),"METEOR"),
-            (Rouge(), "ROUGE_L"),
-#            (Cider(), "CIDEr"),
-        ]
-        if self.cbs:
+        scorers = []
+        if not self.metrics:
+            return {}, {}
+        
+        sel_metrics = [k for k,v in self.metrics.items() if v]
+        if "bert score" in sel_metrics:
             scorers.append((BertScore(), "Bert Score"))
+        if "rouge" in sel_metrics:
+            scorers.append((Rouge(), "Rouge"))
+        if "meteor" in sel_metrics:
+            scorers.append((Meteor(), "Meteor"))
+        if "bleu" in sel_metrics:
+            scorers.append((Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]))
+        if "cider" in sel_metrics:
+            scorers.append((Cider(), "CIDEr"))
 
         # =================================================
         # Compute scores
@@ -95,7 +102,10 @@ class QGEvalCap:
         #scores_dict["model_key"] = self.model_key
         for scorer, method in scorers:
             # print 'computing %s score...'%(scorer.method())
-            score, scores = scorer.compute_score(self.gts, self.res)
+            if isinstance(scorer, BertScore) and model_type:
+                score, scores = scorer.compute_score(self.gts, self.res, model_type)
+            else:
+                score, scores = scorer.compute_score(self.gts, self.res)
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):
                     #print("%s: %0.5f"%(m, sc))
@@ -107,10 +117,8 @@ class QGEvalCap:
                 output.append(score)
                 score_dict[method] = score
                 scores_dict[method] = list(scores)
-        if not self.cbs:
-            score_dict["Bert Score"] = -1
 
-        if self.results_file != None:
+        if self.results_file:
             with open(self.results_file, "a") as f:
                 f.write(json.dumps(score_dict)+"\n")
 
@@ -212,7 +220,7 @@ def topk_eval(out, data, data_type, k, keys, cbs=False):
     print("Exact Match Not None {}  {:.2f}".format(topk_exact_match_not_none, topk_exact_match_not_none / N))
     #print("Mean sent BLEU score", np.mean(get2(topk_bleu_score)))
     print("len gts", len(topk_gts))
-    QGEval = QGEvalCap(out, topk_gts, topk_res, calc_bert_score=cbs)
+    QGEval = QGEvalCap(out, topk_gts, topk_res, metrics={"Rouge":True})
     scores,_ = QGEval.evaluate()
     scores["Exact_match"] = round(topk_exact_match / N,2)
     scores["Exact_match_not_none"] = round(topk_exact_match_not_none / N,2)

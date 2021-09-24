@@ -1,5 +1,5 @@
 python comet/train/run_comet.py \
-    --model_name_or_path t5-small \
+    --model_name_or_path /home/pouramini/mt5-comet/output_atomic_famt5 \
     --source_lang en \
     --target_lang en \
     --source_prefix "atomic: " \
@@ -15,8 +15,8 @@ python comet/train/run_comet.py \
     --max_steps=65000 \
     --do_eval \
     --do_predict \
-    --max_predict_samples=100 \
-    --max_eval_samples=100 \
+#    --max_predict_samples=100 \
+#    --max_eval_samples=100 \
 #    --do_train \
 #    --overwrite_output_dir
 

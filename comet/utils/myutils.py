@@ -6,6 +6,7 @@ def arg2dict(arg):
         if ":" in sub
     )
 
+
 def to_unicode(text, remove_quotes=True):
     if remove_quotes:
         text = text[2:-1]

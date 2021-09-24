@@ -12,11 +12,13 @@ import argparse
 from tqdm import tqdm
       
 #%% some hyper-parameters
-underlying_model_name = "google/mt5-small"
+model_id = "mt5-small"
+underlying_model_name = "/home/pouramini/pret/mt5-small/"
+#underlying_model_name = "logs/atomic-mt5/last"
 #underlying_model_name = "/drive2/pretrained/mt5/base/"
 learning_rate = 6.25e-05
-iterations = 10000
-cycle = 1000 #500
+iterations = 110000
+cycle = 10000 #500
 warm_up_steps = 0.002*iterations
 weight_decay = 0.01
 batch_size = 1
@@ -34,8 +36,8 @@ log_dir = 'logs/'
 #atomic_dataset = load_dataset('atomic')
 import pandas as pd
 atomic_dataset = {}
-atomic_dataset["train"] = pd.read_table("/drive3/pouramini/data/atomic/en_fa/xAttr_train.tsv")
-atomic_dataset["validation"] = pd.read_table("/drive3/pouramini/data/atomic/en_fa/xAttr_validation.tsv")
+atomic_dataset["train"] = pd.read_table("/home/pouramini/atomic/xIntent_en_train_no_dups.tsv")
+atomic_dataset["validation"] = pd.read_table("/home/pouramini/atomic/xIntent_en_fa_validation_no_dups.tsv")
 
 atomic_relation_mappings = {
     "oEffect":"<oEffect>",
@@ -55,6 +57,7 @@ print("building query responses")
 atomic_query_responses = {}
 for split_name,split_data in atomic_dataset.items():
     atomic_query_responses[split_name] = {}
+    split_data["target_text"] = split_data["target_text"].astype(str)
     for index, d in split_data.iterrows():
         rel = d["prefix"]
         if len(d["target_text"])>0: 
@@ -63,7 +66,7 @@ for split_name,split_data in atomic_dataset.items():
             query = f"{event} {rel_token} {gen_token}"
             if query not in atomic_query_responses[split_name]:
                 atomic_query_responses[split_name][query] = []
-            atomic_query_responses[split_name][query].extend(d["target_text"])
+            atomic_query_responses[split_name][query].append(d["target_text"])
             #didn't convert ___ to <blank>
             #didn't normalize to lowercase
 
@@ -111,7 +114,7 @@ train_dataloader = torch.utils.data.DataLoader(atomic_flattened['train'],
 dev_dataloader = torch.utils.data.DataLoader(atomic_flattened['validation'],
     batch_size=batch_size,shuffle=shuffle,collate_fn=collate_fn_for_flattened)
 # %% prepare for training
-model_name = os.path.join("atomic-mt5",f"{learning_rate}_{cycle}_{iterations}_"
+model_name = os.path.join(model_id,f"{learning_rate}_{cycle}_{iterations}_"
     f"{time.strftime('%Y%m%d %a %H:%M:%S')}")
 sw = SummaryWriter(os.path.join(log_dir,model_name))
 serialization_dir = os.path.join(log_dir,model_name)
